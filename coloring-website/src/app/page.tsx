@@ -8,7 +8,7 @@ export default function Home() {
   const [imageUrl, setImageUrl] = useState("Unset");
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center pt-24 px-24 light text-foreground bg-background">
+    <main className="flex min-h-screen flex-col items-center justify-center pt-24 px-24 dark text-foreground bg-background">
       <p className="text-5xl font-semibold py-6">
         Coloring Bookerize Any Image
       </p>
