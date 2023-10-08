@@ -27,15 +27,47 @@ function FileUpload({ currentEvent }: FileUploadProps) {
       }
       setSelectedFile(file);
       console.log(file);
-      curFileName = file.name + v4(); //might need to save this seperately to an atom or similar
+      //swap any spaces in the file name with underscores
+      const processedFileName = file.name.replace(/\s/g, "_");
+      curFileName = v4() + "-" + processedFileName; //might need to save this seperately to an atom or similar
       const imageRef = ref(storage, currentEvent + "/" + curFileName);
       uploadBytes(imageRef, file).then((snapshot) => {
         console.log("Uploaded the image file!");
-      });
-      //get the firebase download url of what was just uploaded
-      getDownloadURL(imageRef).then((url) => {
-        console.log("Download URL: " + url);
-        // call the getColoringPage cloud function with the url
+        getDownloadURL(imageRef).then((url) => {
+          console.log("Download URL: " + encodeURIComponent(url));
+          // call the getColoringPage cloud function with the url
+          const cloudFunctionURL =
+            "https://getcoloringpage-qh5ng7mv3q-uc.a.run.app?url=" +
+            encodeURIComponent(url);
+          console.log("Cloud function URL: " + cloudFunctionURL);
+          fetch(cloudFunctionURL)
+            .then((response) => response.json())
+            .then((responseJson) => {
+              const responseURL = responseJson[0];
+              console.log("Cloud function response URL: " + responseURL);
+
+              // Setup the ref to place the response image in Firebase Storage
+              const responseImageRef = ref(
+                storage,
+                currentEvent + "/generated_" + curFileName
+              );
+
+              // Use fetch to download the image from the response URL
+              fetch(responseURL)
+                .then((response) => response.blob())
+                .then((blob) => {
+                  // Upload the blob to Firebase Storage
+                  uploadBytes(responseImageRef, blob).then(
+                    (responseSnapshot) => {
+                      console.log("Uploaded generated image file!");
+                    }
+                  );
+                });
+            })
+            .catch((error) => {
+              console.error("Error calling cloud function: " + error);
+            });
+        });
       });
     }
   };
