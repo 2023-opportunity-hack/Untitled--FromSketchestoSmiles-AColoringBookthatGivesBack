@@ -1,7 +1,8 @@
 "use client";
 
-import { Textarea, Button, Image } from "@nextui-org/react";
+import { Button, Image } from "@nextui-org/react";
 import { useState } from "react";
+import FileUpload from "@/components/fileUpload";
 
 export default function Home() {
   const [imageUrl, setImageUrl] = useState("Unset");
@@ -12,14 +13,7 @@ export default function Home() {
         Coloring Bookerize Any Image
       </p>
       {imageUrl === "Unset" ? (
-        <Textarea
-          isReadOnly
-          variant="bordered"
-          labelPlacement="outside"
-          placeholder="Enter your description"
-          defaultValue="Upload your image here"
-          className="max-w-xs"
-        />
+        <FileUpload currentEvent="Test" />
       ) : (
         <div className="py-4">
           <Image
