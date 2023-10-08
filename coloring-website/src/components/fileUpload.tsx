@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@nextui-org/react";
 import { storage } from "@/firebase/config";
-import { ref, uploadBytes } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 } from "uuid";
 
 type FileUploadProps = {
@@ -31,6 +31,11 @@ function FileUpload({ currentEvent }: FileUploadProps) {
       const imageRef = ref(storage, currentEvent + "/" + curFileName);
       uploadBytes(imageRef, file).then((snapshot) => {
         console.log("Uploaded the image file!");
+      });
+      //get the firebase download url of what was just uploaded
+      getDownloadURL(imageRef).then((url) => {
+        console.log("Download URL: " + url);
+        // call the getColoringPage cloud function with the url
       });
     }
   };
