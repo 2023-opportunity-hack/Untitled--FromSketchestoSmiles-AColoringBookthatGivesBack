@@ -1,16 +1,45 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@nextui-org/react";
 import { storage } from "@/firebase/config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
 import { v4 } from "uuid";
+import { Image } from "@nextui-org/react";
+
+// Import css files for slick carousel
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import Slider from "react-slick";
 
 type FileUploadProps = {
   currentEvent: string;
 };
 
 function FileUpload({ currentEvent }: FileUploadProps) {
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   let curFileName = "";
+
+  const folderRef = ref(storage, currentEvent);
+  //for each file within the folder, get the download url and add it to the imageUrls array
+  useEffect(() => {
+    const getImages = async () => {
+      const images = await listAll(folderRef);
+      let curImageUrls: string[] = [];
+      for (const image of images.items) {
+        const url = await getDownloadURL(image);
+        curImageUrls.push(url);
+      }
+      //if the imageUrls  has generated_ in it, then it is a generated image and should be added to the carousel
+      //otherwise it is the original image and should not be added to the carousel
+      const generatedImages = curImageUrls.filter((url) =>
+        url.includes("generated_")
+      );
+
+      setImageUrls(generatedImages);
+    };
+    getImages();
+  }, []);
+  console.log(imageUrls);
 
   // Function to handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +89,12 @@ function FileUpload({ currentEvent }: FileUploadProps) {
                   uploadBytes(responseImageRef, blob).then(
                     (responseSnapshot) => {
                       console.log("Uploaded generated image file!");
+
+                      //add the url of the generated image to the imageUrls array
+                      setImageUrls((prevImageUrls) => [
+                        ...prevImageUrls,
+                        responseURL,
+                      ]);
                     }
                   );
                 });
@@ -82,16 +117,33 @@ function FileUpload({ currentEvent }: FileUploadProps) {
   // Ref to the file input element
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  //code for the slider carousel
+  let settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+  };
   return (
-    <div>
-      <input
-        type="file"
-        style={{ display: "none" }}
-        ref={fileInputRef}
-        onChange={handleFileChange}
-      />
-      <Button onClick={handleBrowseClick}>Upload Scribble</Button>
-    </div>
+    <>
+      <div className="flex-row flex pb-4">
+        {imageUrls.map((url, index) => (
+          <div key={index}>
+            <Image height="512" width="512" src={url} alt={`Slide ${index}`} />
+          </div>
+        ))}
+      </div>
+      <div>
+        <input
+          type="file"
+          style={{ display: "none" }}
+          ref={fileInputRef}
+          onChange={handleFileChange}
+        />
+        <Button onClick={handleBrowseClick}>Upload Scribble</Button>
+      </div>
+    </>
   );
 }
 
